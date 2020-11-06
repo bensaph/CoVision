@@ -17,6 +17,7 @@ pts_size = 50 # number of entities
 minPts = 3 # number of neighbors within epsilon to be considered a core point
 epsilon = point_radius * 2 # within epsilon if two circles overlap
 num_clusters = 1
+changes = 0
 
 # for movement (after one timestep)
 lin_speed_min = dim * 0.01 # linear speed minimum
@@ -76,6 +77,7 @@ def main():
     canvas.mainloop()
 
 def moveAll(pts):
+    global changes
     # move to next position
     for p in pts:
         p.movement()
@@ -84,6 +86,7 @@ def moveAll(pts):
     for p in pts:
         p.label = unlabeled
         #p.cluster = -1
+    changes = 0
     dbscan(pts, minPts, epsilon)
 
     # recolor
@@ -105,11 +108,15 @@ def printStats(pts):
         for p in clusters[i]:
             print('\t{}'.format(p.id), end="")
         print()
+
+    print("changes: ", end ='')
+    print(changes)
     print()
 
 
 # called every timestep
 def dbscan(pts, minPts=3, epsilon=point_radius*2):
+    global changes
     global num_clusters
     c = 0 # cluster counter
     for p in pts:
@@ -120,6 +127,8 @@ def dbscan(pts, minPts=3, epsilon=point_radius*2):
             p.label = noise # initialize as noise, can change later
             continue
 
+        if p.cluster is not c and p.cluster is not -1:
+            changes += 1
         p.cluster = c
         p.label = core
 
@@ -131,10 +140,14 @@ def dbscan(pts, minPts=3, epsilon=point_radius*2):
             q = n.pop()
             if q.label is noise:
                 q.label = reachable
+                if p.cluster is not c and p.cluster is not -1:
+                    changes += 1
                 q.cluster = c
             if q.label is not unlabeled:
                 continue
 
+            if p.cluster is not c and p.cluster is not -1:
+                changes += 1
             q.cluster = c
             q.label = reachable
 
